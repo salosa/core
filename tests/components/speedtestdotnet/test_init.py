@@ -144,8 +144,7 @@ def test_get_dynamic_servers() -> None:
     api = MagicMock()
     api.config = {"threads": {"download": 8}, "ignore_servers": [2]}
     api.lat_lon = (60.0, 24.0)
-    setattr(api, "_opener", sentinel.opener)
-    setattr(api, "_secure", True)
+    api.configure_mock(_opener=sentinel.opener, _secure=True)
     response = MagicMock()
     response.code = 200
     servers_xml = (

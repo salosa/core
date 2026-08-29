@@ -5,9 +5,9 @@ from datetime import timedelta
 import logging
 from typing import Any, cast, override
 
+from defusedxml.common import DefusedXmlException
 import defusedxml.ElementTree as ET
 import speedtest
-from defusedxml.common import DefusedXmlException
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant

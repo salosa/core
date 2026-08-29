@@ -189,9 +189,7 @@ def test_get_dynamic_servers() -> None:
         headers={"Accept-Encoding": "gzip"},
         secure=True,
     )
-    mock_catch_request.assert_called_once_with(
-        sentinel.request, opener=sentinel.opener
-    )
+    mock_catch_request.assert_called_once_with(sentinel.request, opener=sentinel.opener)
     response.close.assert_called_once()
     server = next(iter(servers.values()))[0]
     assert server["id"] == "1"

@@ -102,7 +102,7 @@ def _get_dynamic_servers(
         attrib = dict(server.attrib)
         try:
             server_id = int(attrib["id"])
-        except (KeyError, ValueError):
+        except KeyError, ValueError:
             continue
 
         if selected_server_ids and server_id not in selected_server_ids:
@@ -115,7 +115,7 @@ def _get_dynamic_servers(
                 api.lat_lon,
                 (float(attrib["lat"]), float(attrib["lon"])),
             )
-        except (KeyError, TypeError, ValueError):
+        except KeyError, TypeError, ValueError:
             continue
 
         attrib["d"] = distance
@@ -158,7 +158,7 @@ def _filter_servers_by_id(
             try:
                 if int(server["id"]) not in selected_server_ids:
                     continue
-            except (KeyError, TypeError, ValueError):
+            except KeyError, TypeError, ValueError:
                 continue
 
             matching_servers.setdefault(distance, []).append(server)

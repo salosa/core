@@ -36,7 +36,18 @@ DYNAMIC_SERVER = {
     "host": "server3:8080",
     "d": 0.5,
 }
-DYNAMIC_SERVERS = {0.5: [DYNAMIC_SERVER]}
+DYNAMIC_SERVER_DUPLICATE = {
+    **DYNAMIC_SERVER,
+    "name": "ServerDuplicate",
+    "country": "CountryDuplicate",
+    "sponsor": "SponsorDuplicate",
+    "id": "1",
+}
+DYNAMIC_SERVERS = {
+    0.5: [DYNAMIC_SERVER],
+    1.5: [DYNAMIC_SERVER_DUPLICATE],
+}
+SELECTED_DYNAMIC_SERVERS = {0.5: [DYNAMIC_SERVER]}
 
 
 async def test_setup_failed(hass: HomeAssistant, mock_api: MagicMock) -> None:
@@ -206,6 +217,11 @@ def test_update_servers_adds_dynamic_servers(hass: HomeAssistant) -> None:
     mock_get_dynamic_servers.assert_called_once_with(api)
     assert "Country1 - Sponsor1 - Server1" in coordinator.servers
     assert "Country3 - Sponsor3 - Server3" in coordinator.servers
+    assert (
+        "CountryDuplicate - SponsorDuplicate - ServerDuplicate"
+        not in coordinator.servers
+    )
+    assert 1.5 not in api.servers
 
 
 def test_update_data_falls_back_to_dynamic_selected_server(
@@ -225,11 +241,11 @@ def test_update_data_falls_back_to_dynamic_selected_server(
 
     with patch(
         "homeassistant.components.speedtestdotnet.coordinator._get_dynamic_servers",
-        side_effect=[speedtest.ServersRetrievalError(), DYNAMIC_SERVERS],
+        side_effect=[speedtest.ServersRetrievalError(), SELECTED_DYNAMIC_SERVERS],
     ) as mock_get_dynamic_servers:
         coordinator = SpeedTestDataCoordinator(hass, entry, api)
         assert coordinator.update_data() == MOCK_RESULTS
 
-    assert api.servers == DYNAMIC_SERVERS
+    assert api.servers == SELECTED_DYNAMIC_SERVERS
     mock_get_dynamic_servers.assert_called_with(api, servers=["3"])
     api.get_best_server.assert_called_once()

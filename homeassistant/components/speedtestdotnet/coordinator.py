@@ -4,9 +4,10 @@ from collections.abc import Iterable
 from datetime import timedelta
 import logging
 from typing import Any, cast, override
-from xml.etree import ElementTree
 
+import defusedxml.ElementTree as ET
 import speedtest
+from defusedxml.common import DefusedXmlException
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -82,15 +83,15 @@ def _get_dynamic_servers(
     if error:
         raise speedtest.ServersRetrievalError(error)
     if response is None:
-        raise speedtest.ServersRetrievalError()
+        raise speedtest.ServersRetrievalError
 
     servers_xml = _read_response(response)
     if int(response.code) != 200:
-        raise speedtest.ServersRetrievalError()
+        raise speedtest.ServersRetrievalError
 
     try:
-        root = ElementTree.fromstring(servers_xml)
-    except ElementTree.ParseError as err:
+        root = ET.fromstring(servers_xml)
+    except (DefusedXmlException, ET.ParseError) as err:
         raise speedtest.SpeedtestServersError(
             f"Malformed speedtest.net server list: {err}"
         ) from err
@@ -121,7 +122,7 @@ def _get_dynamic_servers(
         dynamic_servers.setdefault(distance, []).append(attrib)
 
     if selected_server_ids and not dynamic_servers:
-        raise speedtest.NoMatchedServers()
+        raise speedtest.NoMatchedServers
 
     return dynamic_servers
 
@@ -137,12 +138,11 @@ def _merge_servers(
     }
 
     for distance, server_list in servers_to_merge.items():
-        target_server_list = servers.setdefault(distance, [])
         for server in server_list:
             server_id = str(server.get("id"))
             if server_id in known_server_ids:
                 continue
-            target_server_list.append(server)
+            servers.setdefault(distance, []).append(server)
             known_server_ids.add(server_id)
 
 
@@ -164,7 +164,7 @@ def _filter_servers_by_id(
             matching_servers.setdefault(distance, []).append(server)
 
     if not matching_servers:
-        raise speedtest.NoMatchedServers()
+        raise speedtest.NoMatchedServers
 
     return matching_servers
 

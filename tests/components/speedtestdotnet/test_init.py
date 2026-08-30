@@ -17,7 +17,7 @@ from homeassistant.components.speedtestdotnet.coordinator import (
 )
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import STATE_UNAVAILABLE
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from . import MOCK_RESULTS, MOCK_SERVERS
@@ -111,6 +111,27 @@ async def test_server_not_found(hass: HomeAssistant, mock_api: MagicMock) -> Non
     state = hass.states.get("sensor.speedtest_ping")
     assert state is not None
     assert state.state == STATE_UNAVAILABLE
+
+
+async def test_setup_retries_when_selected_server_is_not_found_after_startup(
+    hass: HomeAssistant, mock_api: MagicMock
+) -> None:
+    """Test setup retries when a selected server is not found after startup."""
+    hass.set_state(CoreState.running)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        options={CONF_SERVER_ID: "3"},
+    )
+    entry.add_to_hass(hass)
+
+    with patch(
+        "homeassistant.components.speedtestdotnet.coordinator._get_dynamic_servers",
+        side_effect=[{}, speedtest.NoMatchedServers],
+    ):
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done(wait_background_tasks=True)
+
+    assert entry.state is ConfigEntryState.SETUP_RETRY
 
 
 async def test_get_best_server_error(hass: HomeAssistant, mock_api: MagicMock) -> None:

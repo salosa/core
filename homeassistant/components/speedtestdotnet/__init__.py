@@ -4,9 +4,8 @@ from functools import partial
 
 import speedtest
 
-from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.start import async_at_started
 
@@ -29,15 +28,16 @@ async def async_setup_entry(
 
     config_entry.runtime_data = coordinator
 
-    async def _async_finish_startup(hass: HomeAssistant) -> None:
-        """Run this only when HA has finished its startup."""
-        if config_entry.state is ConfigEntryState.LOADED:
-            await coordinator.async_refresh()
-        else:
-            await coordinator.async_config_entry_first_refresh()
+    if hass.state is CoreState.running:
+        await coordinator.async_config_entry_first_refresh()
+    else:
 
-    # Don't start a speedtest during startup
-    async_at_started(hass, _async_finish_startup)
+        async def _async_finish_startup(hass: HomeAssistant) -> None:
+            """Run this only when HA has finished its startup."""
+            await coordinator.async_refresh()
+
+        # Don't start a speedtest during startup
+        async_at_started(hass, _async_finish_startup)
 
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
 
